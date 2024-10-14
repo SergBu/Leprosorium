@@ -23,7 +23,7 @@ configure do
 	# инициализация БД
 	init_db
 
-
+	# создаёт таблицу если таблица не существует
 	@db.execute 'create table if not exists Posts
 	(
 		id INTEGER PRIMARY KEY AUTOINCREMENT, 
@@ -33,7 +33,10 @@ configure do
 end
 
 get '/' do
-	erb "Hello! <a href=\"https://github.com/bootstrap-ruby/sinatra-bootstrap\">Original</a> pattern has been modified for <a href=\"http://rubyschool.us/\">Ruby School</a>"			
+	# выбираем список постов из БД
+	@results = @db.execute 'select * from Posts order by id desc'
+
+	erb :index
 end
 
 # обработчик get-запроса /new
@@ -47,6 +50,17 @@ end
 post '/new' do
   # получаем переменную из post-запроса
   @content = params[:content]
+
+  if @content.length <= 0
+  		@error = 'Type post text'
+  		return erb :new
+  end
+
+  # сохранение данных в БД
+  @db.execute 'insert into Posts (content, created_date) values (?, datetime())', [@content]
+  
+  # перенаправление на главную страницу
+  redirect to '/'
   # возвращаем ответ
-  erb "You typed #{@content}"
+  # erb "You typed #{@content}"
 end
